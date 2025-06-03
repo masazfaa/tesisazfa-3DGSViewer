@@ -107,8 +107,6 @@ If you have any questions or suggestions, feel free to contact me via [GitHub Is
 
 Happy exploring, and I hope this tool helps you in your geospatial data analysis!
 
-```
-
 ### Key Additions:
 
 1. **Instructions for setting the headers (`Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy`)** to ensure secure resource interaction.
