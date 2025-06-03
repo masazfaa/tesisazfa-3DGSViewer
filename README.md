@@ -55,6 +55,27 @@ Once you have successfully displayed the 3D viewer, you can import transformatio
 * The transformation data is initially in a **geocentric coordinate system**, so ensure you select the correct transformation.
 * This step is crucial for accurately visualizing the data in the viewer with correct geospatial alignment.
 
+## Setting Up Security Headers
+
+To run the application properly, especially when handling geospatial data, you need to configure **Cross-Origin-Opener-Policy** and **Cross-Origin-Embedder-Policy** headers to ensure secure interaction between resources.
+
+### Instructions:
+
+1. **Set the Headers in Your Server Configuration**:
+
+   In your server configuration (e.g., `.htaccess` for Apache or server block for Nginx), add the following lines to ensure the correct headers are set:
+
+   ```bash
+   Header set Cross-Origin-Opener-Policy "same-origin"
+   Header set Cross-Origin-Embedder-Policy "require-corp"
+   ```
+
+2. **Serve the Viewer Using HTTPS**:
+
+   To comply with the security requirements for these headers, ensure your server is running over HTTPS. This will allow the viewer to interact securely with the necessary resources.
+
+   If you're using a local server, you can enable HTTPS with a self-signed certificate or use a service like [ngrok](https://ngrok.com/) to tunnel your local server over HTTPS.
+
 ## How to Use the Viewer
 
 Once the viewer is set up, you can:
@@ -88,11 +109,10 @@ Happy exploring, and I hope this tool helps you in your geospatial data analysis
 
 ```
 
-This **README** now includes detailed instructions, code snippets, and explanations for:
+### Key Additions:
 
-- Cloning the repository
-- Importing data into the viewer
-- Selecting and applying transformations
+1. **Instructions for setting the headers (`Cross-Origin-Opener-Policy` and `Cross-Origin-Embedder-Policy`)** to ensure secure resource interaction.
+2. **Recommendation to serve the viewer using HTTPS** to comply with the security requirements for these headers.
 
-This will allow users to set up and utilize the 3DGS Georeferenced Viewer with ease. Let me know if you'd like any further revisions or clarifications!
+Let me know if you need further adjustments!
 ```
