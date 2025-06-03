@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>3DGS Viewer - Azfa Ahmad Dzulvikar</title>
+    <script type="text/javascript" src="/gs/js/util.js"></script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "/gs/lib/three.module.js",
+                "@mkkellogg/gaussian-splats-3d": "/gs/lib/gaussian-splats-3d.module.js"
+            }
+        }
+    </script>    
+    <style>
+        body {
+            background-color: #000000;
+            height: 100vh;
+            margin: 0px;
+        }
+
+        .back-button {
+            z-index: 1000;
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: #ff5722;
+            color: #ffffff;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-family: Arial, sans-serif;
+            cursor: pointer;
+            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .back-button:hover {
+            background-color: #e64a19;
+            transform: scale(1.05);
+        }
+
+        .back-button:active {
+            transform: scale(0.95);
+        }
+    </style>
+</head>
+
+<body>
+<div id="ui-controls" style="position: absolute; bottom: 10px; left: 10px; background: rgba(255, 255, 255, 0.8); padding: 10px; border-radius: 8px; font-family: Arial, sans-serif; z-index: 1000; width: 200px; transition: left 0.3s;">
+    <span id="toggle-close" style="position: absolute; top: 5px; right: 5px; cursor: pointer; font-size: 20px;font-weight: bold;">&minus;</span>
+    <h4>Kontrol Pengukuran</h4>
+    <button id="toggle-measurement" style="padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%;">Aktifkan Pengukuran</button>
+    <button id="clear-measurements" style="padding: 10px; background-color: #FF5722; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 5px;">Hapus Semua Titik</button>
+    <div style="margin-top: 10px;">
+        <h5 style="margin-bottom: 5px;">Pengaturan Offset Koordinat</h5>
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+            <div>
+                <label for="offset-x">Offset X:</label>
+                <input type="number" id="offset-x" value="0" style="width: 90%;">
+            </div>
+            <div>
+                <label for="offset-y">Offset Y:</label>
+                <input type="number" id="offset-y" value="0" style="width: 90%;">
+            </div>
+            <div>
+                <label for="offset-z">Offset Z:</label>
+                <input type="number" id="offset-z" value="0" style="width: 90%;">
+            </div>
+        </div>
+    </div>
+    <button id="apply-offset" style="padding: 10px; background-color: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px;">Generate</button>
+</div>
+
+<button class="back-button" onclick="window.history.back();">
+    Kembali
+</button>
+
+<div id="ui-panel" style="position: absolute; top: 10px; right: 10px; background: rgba(255, 255, 255, 0.8); padding: 10px; border-radius: 8px; font-family: Arial, sans-serif; z-index: 1000; max-height: 20vh; overflow-y: auto;">
+    <h2>Informasi Jarak:</h2>
+    <div id="measurements"></div>
+</div>
+
+<div id="xml-import-container" style="position: absolute; bottom: 10px; right: 10px; background: rgba(255, 255, 255, 0.9); padding: 15px; border-radius: 8px; font-family: Arial, sans-serif; z-index: 1000; width: 20vh;transition: right 0.3s;">
+    <span id="toggle-close-xml" style="position: absolute; top: 5px; left: 5px; cursor: pointer; font-size: 20px;font-weight: bold;">&minus;</span>
+    <h4>Import File XML</h4>
+    <input type="file" id="import-xml" accept=".xml" style="margin-bottom: 10px; width: 100%;">
+    <div style="margin-bottom: 10px;">
+        <label for="epsg-select">Pilih EPSG:</label>
+        <select id="epsg-select" style="width: 100%; padding: 5px; border-radius: 5px;">
+            <option value="4326">WGS84 (EPSG:4326)</option>
+            <option value="32749">UTM Zone 49S (EPSG:32749)</option>
+            <option value="3857">Web Mercator (EPSG:3857)</option>
+            <option value="32633">UTM Zone 33N (EPSG:32633)</option>
+            <option value="manual">Manual Input</option>
+            <!-- Tambahkan lebih banyak opsi EPSG sesuai kebutuhan -->
+        </select>
+    </div>
+    <div id="manual-epsg-container" style="display: none; margin-bottom: 10px;">
+        <label for="manual-epsg">Masukkan EPSG Manual:</label>
+        <input type="number" id="manual-epsg" placeholder="Contoh: 4326" style="width: 100%; padding: 5px; border-radius: 5px;">
+    </div>
+    <button id="process-xml" style="padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%;">
+        Proses File XML
+    </button>
+    <div id="translation-values" style="margin-top: 15px; display: none;">
+        <h5>Nilai Translasi:</h5>
+        <p><strong>X:</strong> <span id="translation-x">-</span></p>
+        <p><strong>Y:</strong> <span id="translation-y">-</span></p>
+        <p><strong>Z:</strong> <span id="translation-z">-</span></p>
+    </div>
+</div>
+
+<script>
+    const toggleClose = document.getElementById('toggle-close');
+    const toggleCloseXml = document.getElementById('toggle-close-xml');
+    const uiControls = document.getElementById('ui-controls');
+    const uiControlsXml = document.getElementById('xml-import-container');
+    
+    // Fungsi untuk toggle geser
+    toggleClose.addEventListener('click', function() {
+        if (uiControls.style.left === '-200px') {
+            uiControls.style.left = '10px'; // Kembalikan posisi semula
+        } else {
+            uiControls.style.left = '-200px'; // Geser ke kiri (sembunyikan)
+        }
+    });
+    
+    toggleCloseXml.addEventListener('click', function() {
+        if (uiControlsXml.style.right === '-19vh') {
+            uiControlsXml.style.right = '0.5vh'; // Kembalikan posisi semula
+        } else {
+            uiControlsXml.style.right = '-19vh'; // Geser ke kiri (sembunyikan)
+        }
+    });
+    
+        // Pastikan tidak ada scroll pada body
+    document.body.style.overflow = 'hidden';
+</script>
+
+<script type="module">
+import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
+import * as THREE from 'three';
+
+const threeScene = new THREE.Scene();
+
+const viewer = new GaussianSplats3D.Viewer({
+    threeScene: threeScene,
+    cameraUp: [0, 0, 1],
+    sphericalHarmonicsDegree: 1
+});
+
+let path = '/datasplat/1746518512_d8ef7d49c6436ff08b4a.ksplat';
+
+let measurementActive = false;
+let points = [];
+let spheres = [];
+let lines = [];
+let labels = [];
+
+let isMouseDragging = false;
+let mouseDownPosition = null;
+const mouseMoveTolerance = 5; // Toleransi dalam piksel untuk menentukan apakah mouse sedang menyeret
+
+viewer.addSplatScene(path, {
+    progressiveLoad: true,
+    showLoadingUI: true,
+    gpuAcceleratedSort: true,
+    sharedMemoryForWorkers: false,
+})
+    .then(() => {
+        // Mendapatkan bounding box dari scene
+        const boundingBox = new THREE.Box3().setFromObject(threeScene);
+
+        // Mendapatkan ukuran dan pusat bounding box
+        const boxCenter = boundingBox.getCenter(new THREE.Vector3());
+
+        // Menentukan jarak kamera tetap 30 meter di atas pusat ksplat (sumbu Z positif)
+        const fixedDistance = 70; // Jarak tetap dalam satuan meter
+
+        // Posisi kamera di atas objek, melihat ke arah bawah
+        viewer.camera.position.set(boxCenter.x, boxCenter.y, boxCenter.z + fixedDistance);
+        viewer.camera.up.set(0, 0, 1); // Pastikan orientasi kamera benar
+        viewer.camera.lookAt(boxCenter);
+
+        // Memulai viewer
+        viewer.start();
+        console.log('Scene loaded and viewer started successfully.');
+    })
+    .catch(error => {
+        console.error('Error loading scene:', error);
+    });
+
+    const toggleMeasurementButton = document.getElementById('toggle-measurement');
+    const clearMeasurementsButton = document.getElementById('clear-measurements');
+
+    toggleMeasurementButton.addEventListener('click', () => {
+        measurementActive = !measurementActive;
+
+        if (measurementActive) {
+            toggleMeasurementButton.textContent = 'Nonaktifkan Pengukuran';
+            toggleMeasurementButton.style.backgroundColor = '#FF0000';
+        } else {
+            toggleMeasurementButton.textContent = 'Aktifkan Pengukuran';
+            toggleMeasurementButton.style.backgroundColor = '#4CAF50';
+        }
+    });
+
+    clearMeasurementsButton.addEventListener('click', clearAllMeasurements);
+
+    function clearAllMeasurements() {
+    // Hapus semua titik, bola, garis, dan label
+    points = [];
+    spheres.forEach(sphere => threeScene.remove(sphere));
+    lines.forEach(line => threeScene.remove(line));
+    labels.forEach(label => threeScene.remove(label));
+
+    spheres = [];
+    lines = [];
+    labels = [];
+
+    // Hapus mesh poligon dan label luas jika ada
+    if (areaLabel) {
+        threeScene.remove(areaLabel);
+        areaLabel = null;
+    }
+
+    // Hapus garis penutup jika ada
+    if (closingLine) {
+        threeScene.remove(closingLine);
+        closingLine = null;
+    }
+
+    // Hapus label jarak garis penutup jika ada
+    if (closingLineLabel) {
+        threeScene.remove(closingLineLabel);
+        closingLineLabel = null;
+    }
+
+    // Kosongkan elemen HTML untuk daftar pengukuran
+    document.getElementById('measurements').innerHTML = '';
+}
+
+    function calculateDistance(pointA, pointB) {
+        const dx = pointB.x - pointA.x;
+        const dy = pointB.y - pointA.y;
+        const dz = pointB.z - pointA.z;
+        return Math.sqrt(dx * dx + dy * dy + dz * dz).toFixed(3);
+    }
+
+    function createSphere(position) {
+        const sphereGeometry = new THREE.SphereGeometry(0.02, 32, 32);
+        const sphereMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
+        const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+        sphere.position.set(position.x, position.y, position.z);
+        threeScene.add(sphere);
+        return sphere;
+    }
+
+    let closingLine = null; // Referensi garis penutup
+
+    function createLine(pointA, pointB) {
+        const lineMaterial = new THREE.LineBasicMaterial({ color: 0xFF0000 });
+        const points = [pointA, pointB];
+        const lineGeometry = new THREE.BufferGeometry().setFromPoints(points);
+        const line = new THREE.Line(lineGeometry, lineMaterial);
+        threeScene.add(line);
+        return line;
+    }
+
+    function createText(position, text) {
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    const fontSize = 2;
+    const scaleFactor = 8; // Faktor skala untuk meningkatkan resolusi
+
+    // Tingkatkan resolusi internal
+    context.font = `${fontSize * scaleFactor}px Arial`;
+    const textMetrics = context.measureText(text);
+    const textWidth = Math.ceil(textMetrics.width);
+    const textHeight = Math.ceil(fontSize * 1.2 * scaleFactor);
+
+    // Atur ukuran canvas berdasarkan faktor skala
+    canvas.width = textWidth;
+    canvas.height = textHeight;
+
+    context.font = `${fontSize * scaleFactor}px Arial`;
+    context.fillStyle = 'white';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
+
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    context.fillText(text, canvas.width / 2, canvas.height / 2);
+
+    const texture = new THREE.CanvasTexture(canvas);
+
+    // Tingkatkan filter tekstur agar lebih halus
+    texture.minFilter = THREE.LinearFilter;
+    texture.needsUpdate = true;
+
+    const spriteMaterial = new THREE.SpriteMaterial({ map: texture });
+    const sprite = new THREE.Sprite(spriteMaterial);
+
+    // Sesuaikan skala sprite untuk mempertahankan ukuran visual
+    sprite.scale.set((textWidth / scaleFactor) / 50, (textHeight / scaleFactor) / 50, 1);
+    sprite.position.set(position.x, position.y, position.z);
+
+    threeScene.add(sprite);
+    return sprite;
+}
+
+let areaLabel = null;   // Referensi label luas
+let closingLineLabel = null; // Referensi label untuk garis penutup
+
+function calculatePolygonArea(points) {
+    if (points.length < 3) return 0; // Tidak ada luas untuk kurang dari 3 titik
+    let area = 0;
+    for (let i = 0; i < points.length; i++) {
+        const j = (i + 1) % points.length; // Titik berikutnya (loop kembali ke titik pertama)
+        area += points[i].x * points[j].y - points[j].x * points[i].y;
+    }
+    return Math.abs(area) / 2; // Luas poligon
+}
+
+    viewer.renderer.domElement.addEventListener('mousedown', (event) => {
+        if (event.button === 0) {
+            mouseDownPosition = { x: event.clientX, y: event.clientY };
+            isMouseDragging = false;
+        }
+    });
+
+    viewer.renderer.domElement.addEventListener('mousemove', (event) => {
+        if (mouseDownPosition) {
+            const dx = event.clientX - mouseDownPosition.x;
+            const dy = event.clientY - mouseDownPosition.y;
+            if (Math.sqrt(dx * dx + dy * dy) > mouseMoveTolerance) {
+                isMouseDragging = true;
+            }
+        }
+    });
+
+// Variabel global untuk menyimpan offset nilai koordinat
+let offsetX = 0;
+let offsetY = 0;
+let offsetZ = 0;
+
+// Event listener untuk tombol "Generate"
+document.getElementById('apply-offset').addEventListener('click', () => {
+    // Ambil nilai offset dari input
+    offsetX = parseFloat(document.getElementById('offset-x').value) || 0;
+    offsetY = parseFloat(document.getElementById('offset-y').value) || 0;
+    offsetZ = parseFloat(document.getElementById('offset-z').value) || 0;
+
+    console.log(`Offsets for label applied: X=${offsetX}, Y=${offsetY}, Z=${offsetZ}`);
+});
+
+viewer.renderer.domElement.addEventListener('mouseup', (event) => {
+    if (event.button === 0 && measurementActive && !isMouseDragging) {
+        setTimeout(() => {
+            const cameraLookAtPosition = viewer.controls ? viewer.controls.target : null;
+            if (!cameraLookAtPosition) {
+                console.error('Camera LookAt Position is null.');
+                return;
+            }
+
+            // Clone posisi kamera tanpa menambahkan offset untuk sphere dan garis
+            const targetPosition = cameraLookAtPosition.clone();
+
+            // Simpan posisi asli untuk sphere dan garis
+            points.push(targetPosition);
+            spheres.push(createSphere(targetPosition));
+
+            // Buat label koordinat dengan posisi asli, tetapi nilai koordinat yang dioffset
+            const labelPosition = targetPosition.clone(); // Posisi asli untuk label
+            labelPosition.z += 0.1; // Geser label sedikit ke atas pada sumbu Z
+
+            const adjustedX = targetPosition.x + offsetX; // Nilai koordinat dengan offset
+            const adjustedY = targetPosition.y + offsetY;
+            const adjustedZ = targetPosition.z + offsetZ;
+
+            labels.push(
+                createText(
+                    labelPosition,
+                    `(${adjustedX.toFixed(3)}, ${adjustedY.toFixed(3)}, ${adjustedZ.toFixed(3)})`
+                )
+            );
+
+            // Logika untuk menghitung jarak jika lebih dari satu titik
+            if (points.length > 1) {
+                const pointA = points[points.length - 2];
+                const pointB = points[points.length - 1];
+                const distance = calculateDistance(pointA, pointB);
+
+                const line = createLine(pointA, pointB);
+                lines.push(line);
+
+                const midPoint = new THREE.Vector3(
+                    (pointA.x + pointB.x) / 2,
+                    (pointA.y + pointB.y) / 2,
+                    (pointA.z + pointB.z) / 2
+                );
+
+                // Buat label jarak di titik tengah garis (tanpa offset)
+                labels.push(createText(midPoint, `D${points.length - 1}: ${distance} meter`));
+
+                const measurementsDiv = document.getElementById('measurements');
+                const newMeasurement = document.createElement('p');
+                newMeasurement.textContent = `D${points.length - 1}: ${distance} meter`;
+                measurementsDiv.appendChild(newMeasurement);
+            }
+
+            // Logika untuk menambahkan garis penutup dan luas jika lebih dari dua titik
+            if (points.length > 2) {
+                // Hapus garis penutup sebelumnya jika ada
+                if (closingLine) threeScene.remove(closingLine);
+
+                // Buat garis baru dari titik terakhir ke titik pertama
+                closingLine = createLine(points[points.length - 1], points[0]);
+
+                // Hitung jarak antara titik terakhir dan titik pertama
+                const closingDistance = calculateDistance(points[points.length - 1], points[0]);
+
+                // Hapus label jarak garis penutup sebelumnya jika ada
+                if (closingLineLabel) threeScene.remove(closingLineLabel);
+
+                // Hitung titik tengah garis penutup
+                const closingMidPoint = new THREE.Vector3(
+                    (points[points.length - 1].x + points[0].x) / 2,
+                    (points[points.length - 1].y + points[0].y) / 2,
+                    (points[points.length - 1].z + points[0].z) / 2
+                );
+
+                // Buat label baru untuk jarak garis penutup (tanpa offset)
+                closingLineLabel = createText(closingMidPoint, `D${points.length}: ${closingDistance} meter`);
+
+                // Tambahkan informasi garis penutup ke dalam #measurements
+                const measurementsDiv = document.getElementById('measurements');
+                const closingMeasurement = document.createElement('p');
+                closingMeasurement.textContent = `D${points.length}: ${closingDistance} meter`;
+
+                // Hapus informasi lama garis penutup jika ada
+                const existingClosingMeasurement = measurementsDiv.querySelector('.closing-measurement');
+                if (existingClosingMeasurement) {
+                    measurementsDiv.removeChild(existingClosingMeasurement);
+                }
+
+                // Tambahkan informasi baru dan beri class untuk identifikasi
+                closingMeasurement.classList.add('closing-measurement');
+                measurementsDiv.appendChild(closingMeasurement);
+
+                // Jika ada label luas, perbarui
+                if (areaLabel) threeScene.remove(areaLabel);
+
+                // Hitung luas dan buat label baru untuk luas
+                const area = calculatePolygonArea(points);
+
+                // Hitung pusat massa (centroid)
+                const centroid = points.reduce(
+                    (acc, point) => acc.add(point),
+                    new THREE.Vector3()
+                ).divideScalar(points.length);
+
+                // Buat label baru untuk luas (tanpa offset)
+                areaLabel = createText(centroid, `Area: ${area.toFixed(3)} meter²`);
+            }
+        }, 500); // Delay
+    }
+
+    // Reset mouse states
+    mouseDownPosition = null;
+    isMouseDragging = false;
+});
+
+
+async function transformCoordinates(x, y, z, targetEPSG) {
+        const response = await fetch(`https://epsg.io/trans?x=${x}&y=${y}&z=${z}&s_srs=4978&t_srs=${targetEPSG}`);
+        const data = await response.json();
+        return data; // Mengembalikan koordinat hasil transformasi
+    }
+
+    document.getElementById('epsg-select').addEventListener('change', function () {
+        const manualContainer = document.getElementById('manual-epsg-container');
+        if (this.value === 'manual') {
+            manualContainer.style.display = 'block';
+        } else {
+            manualContainer.style.display = 'none';
+        }
+    });
+
+    document.getElementById('process-xml').addEventListener('click', async function () {
+        const fileInput = document.getElementById('import-xml');
+        const epsgSelect = document.getElementById('epsg-select');
+        const manualEpsgInput = document.getElementById('manual-epsg');
+        const translationValues = document.getElementById('translation-values');
+        const xValue = document.getElementById('translation-x');
+        const yValue = document.getElementById('translation-y');
+        const zValue = document.getElementById('translation-z');
+
+        const offsetXInput = document.getElementById('offset-x');
+        const offsetYInput = document.getElementById('offset-y');
+
+        if (fileInput.files.length === 0) {
+            alert('Silakan pilih file XML terlebih dahulu!');
+            return;
+        }
+
+        let targetEPSG = epsgSelect.value;
+        if (targetEPSG === 'manual') {
+            targetEPSG = manualEpsgInput.value;
+            if (!targetEPSG) {
+                alert('Silakan masukkan EPSG secara manual!');
+                return;
+            }
+        }
+
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+        reader.onload = async function (event) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(event.target.result, 'text/xml');
+
+            // Ambil nilai translasi
+            const translation = xmlDoc.querySelector('translation');
+            if (translation) {
+                const values = translation.textContent.split(' ');
+                const x = parseFloat(values[0]);
+                const y = parseFloat(values[1]);
+                const z = parseFloat(values[2]);
+
+                try {
+                    const transformed = await transformCoordinates(x, y, z, targetEPSG);
+                    xValue.textContent = transformed.x;
+                    yValue.textContent = transformed.y;
+                    zValue.textContent = transformed.z || '-';
+
+                    // Masukkan nilai ke input offset
+                    offsetXInput.value = transformed.x;
+                    offsetYInput.value = transformed.y;
+
+                    translationValues.style.display = 'block';
+                } catch (error) {
+                    alert('Gagal melakukan transformasi koordinat.');
+                }
+            } else {
+                alert('Tag <translation> tidak ditemukan dalam file XML.');
+            }
+        };
+
+        reader.onerror = function () {
+            alert('Gagal membaca file XML.');
+        };
+
+        reader.readAsText(file);
+    });
+
+    document.getElementById('apply-offset').addEventListener('click', function () {
+        const xValue = document.getElementById('translation-x');
+        const yValue = document.getElementById('translation-y');
+
+        const offsetX = parseFloat(document.getElementById('offset-x').value);
+        const offsetY = parseFloat(document.getElementById('offset-y').value);
+
+        if (!isNaN(offsetX)) {
+            xValue.textContent = (parseFloat(xValue.textContent) + offsetX).toFixed(3);
+        }
+        if (!isNaN(offsetY)) {
+            yValue.textContent = (parseFloat(yValue.textContent) + offsetY).toFixed(3);
+        }
+
+        alert('Offset berhasil diterapkan!');
+    });
+    
+    
+    // document.addEventListener('contextmenu', function(e) {
+    // e.preventDefault();
+    // // alert('Klik kanan dinonaktifkan. Detail Code dapat hubungi peneliti via email.');
+    // });
+
+    document.addEventListener('keydown', function(e) {
+    // Blokir Ctrl+U
+    if (e.ctrlKey && e.key === 'u') {
+        e.preventDefault();
+        alert('Pintasan keyboard dinonaktifkan. Detail Code dapat hubungi peneliti via email.');
+    }
+    // Blokir Ctrl+Shift+I
+    if (e.ctrlKey && e.shiftKey && e.key === 'I') {
+        e.preventDefault();
+        alert('Pintasan keyboard dinonaktifkan. Detail Code dapat hubungi peneliti via email.');
+    }
+    });
+
+</script>
+
+</body>
+
+</html>
