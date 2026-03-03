@@ -5,16 +5,17 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="x-ua-compatible" content="ie=edge">
-    <title>3DGS Viewer - Azfa Ahmad Dzulvikar</title>
-    <script type="text/javascript" src="/gs/js/util.js"></script>
+    <title><?= $title ?></title>
+    <script type="text/javascript" src="<?php echo base_url('gs/js/util.js'); ?>"></script>
     <script type="importmap">
         {
             "imports": {
-                "three": "/gs/lib/three.module.js",
-                "@mkkellogg/gaussian-splats-3d": "/gs/lib/gaussian-splats-3d.module.js"
+                "three": "<?php echo base_url('gs/lib/three.module.js'); ?>",
+                "@mkkellogg/gaussian-splats-3d": "<?php echo base_url('gs/lib/gaussian-splats-3d.module.js'); ?>"
             }
         }
-    </script>    
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.9.0/proj4.js"></script>
     <style>
         body {
             background-color: #000000;
@@ -51,11 +52,14 @@
 </head>
 
 <body>
-<div id="ui-controls" style="position: absolute; bottom: 10px; left: 10px; background: rgba(255, 255, 255, 0.8); padding: 10px; border-radius: 8px; font-family: Arial, sans-serif; z-index: 1000; width: 200px; transition: left 0.3s;">
-    <span id="toggle-close" style="position: absolute; top: 5px; right: 5px; cursor: pointer; font-size: 20px;font-weight: bold;">&minus;</span>
+<div id="ui-controls" style="position: absolute; bottom: 10px; left: 10px; background: rgba(255, 255, 255, 0.8); padding: 10px; border-radius: 8px; font-family: Arial, sans-serif; z-index: 1000; width: 200px;">
     <h4>Kontrol Pengukuran</h4>
-    <button id="toggle-measurement" style="padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%;">Aktifkan Pengukuran</button>
-    <button id="clear-measurements" style="padding: 10px; background-color: #FF5722; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 5px;">Hapus Semua Titik</button>
+    <button id="toggle-measurement" style="padding: 10px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%;">
+        Aktifkan Pengukuran
+    </button>
+    <button id="clear-measurements" style="padding: 10px; background-color: #FF5722; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 5px;">
+        Hapus Semua Titik
+    </button>
     <div style="margin-top: 10px;">
         <h5 style="margin-bottom: 5px;">Pengaturan Offset Koordinat</h5>
         <div style="display: flex; flex-direction: column; gap: 5px;">
@@ -73,8 +77,11 @@
             </div>
         </div>
     </div>
-    <button id="apply-offset" style="padding: 10px; background-color: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px;">Generate</button>
+    <button id="apply-offset" style="padding: 10px; background-color: #2196F3; color: white; border: none; border-radius: 5px; cursor: pointer; width: 100%; margin-top: 10px;">
+        Generate
+    </button>
 </div>
+
 
 <button class="back-button" onclick="window.history.back();">
     Kembali
@@ -85,9 +92,8 @@
     <div id="measurements"></div>
 </div>
 
-<div id="xml-import-container" style="position: absolute; bottom: 10px; right: 10px; background: rgba(255, 255, 255, 0.9); padding: 15px; border-radius: 8px; font-family: Arial, sans-serif; z-index: 1000; width: 20vh;transition: right 0.3s;">
-    <span id="toggle-close-xml" style="position: absolute; top: 5px; left: 5px; cursor: pointer; font-size: 20px;font-weight: bold;">&minus;</span>
-    <h4>Import File XML</h4>
+<div id="xml-import-container" style="position: absolute; bottom: 10px; right: 10px; background: rgba(255, 255, 255, 0.9); padding: 15px; border-radius: 8px; font-family: Arial, sans-serif; z-index: 1000; width: 20vh;">
+    <h4>Import File XML<?=$idnya?></h4>
     <input type="file" id="import-xml" accept=".xml" style="margin-bottom: 10px; width: 100%;">
     <div style="margin-bottom: 10px;">
         <label for="epsg-select">Pilih EPSG:</label>
@@ -115,33 +121,6 @@
     </div>
 </div>
 
-<script>
-    const toggleClose = document.getElementById('toggle-close');
-    const toggleCloseXml = document.getElementById('toggle-close-xml');
-    const uiControls = document.getElementById('ui-controls');
-    const uiControlsXml = document.getElementById('xml-import-container');
-    
-    // Fungsi untuk toggle geser
-    toggleClose.addEventListener('click', function() {
-        if (uiControls.style.left === '-200px') {
-            uiControls.style.left = '10px'; // Kembalikan posisi semula
-        } else {
-            uiControls.style.left = '-200px'; // Geser ke kiri (sembunyikan)
-        }
-    });
-    
-    toggleCloseXml.addEventListener('click', function() {
-        if (uiControlsXml.style.right === '-19vh') {
-            uiControlsXml.style.right = '0.5vh'; // Kembalikan posisi semula
-        } else {
-            uiControlsXml.style.right = '-19vh'; // Geser ke kiri (sembunyikan)
-        }
-    });
-    
-        // Pastikan tidak ada scroll pada body
-    document.body.style.overflow = 'hidden';
-</script>
-
 <script type="module">
 import * as GaussianSplats3D from '@mkkellogg/gaussian-splats-3d';
 import * as THREE from 'three';
@@ -154,7 +133,8 @@ const viewer = new GaussianSplats3D.Viewer({
     sphericalHarmonicsDegree: 1
 });
 
-let path = '/datasplat/1746518512_d8ef7d49c6436ff08b4a.ksplat';
+let path = '<?php echo base_url('datasplat/' . $selected_scene) ?>';
+console.log('Path to the selected 3D scene:', path);
 
 let measurementActive = false;
 let points = [];
@@ -476,10 +456,36 @@ viewer.renderer.domElement.addEventListener('mouseup', (event) => {
 });
 
 
-async function transformCoordinates(x, y, z, targetEPSG) {
-        const response = await fetch(`https://epsg.io/trans?x=${x}&y=${y}&z=${z}&s_srs=4978&t_srs=${targetEPSG}`);
-        const data = await response.json();
-        return data; // Mengembalikan koordinat hasil transformasi
+    // Daftarkan definisi EPSG yang sering dipakai
+    // Titik awal (Source) dari XML Agisoft Metashape adalah ECEF Geocentric (EPSG:4978)
+    proj4.defs("EPSG:4978", "+proj=geocent +datum=WGS84 +units=m +no_defs");
+
+    // Target Transformasi
+    proj4.defs("EPSG:4326", "+proj=longlat +datum=WGS84 +no_defs");
+    proj4.defs("EPSG:32749", "+proj=utm +zone=49 +south +datum=WGS84 +units=m +no_defs");
+    proj4.defs("EPSG:3857", "+proj=merc +a=6378137 +b=6378137 +lat_ts=0.0 +lon_0=0.0 +x_0=0.0 +y_0=0 +k=1.0 +units=m +nadgrids=@null +wktext +no_defs");
+    proj4.defs("EPSG:32633", "+proj=utm +zone=33 +datum=WGS84 +units=m +no_defs");
+
+    // Fungsi Transformasi Tanpa Fetch (Super Cepat & Offline)
+    async function transformCoordinates(x, y, z, targetEPSG) {
+        const sourceProj = "EPSG:4978"; // Dari XML Metashape
+        const targetProj = "EPSG:" + targetEPSG;
+
+        // Cek apakah target EPSG sudah didaftarkan di proj4
+        if (!proj4.defs[targetProj]) {
+            throw new Error(`Sistem Koordinat EPSG:${targetEPSG} belum didaftarkan di script.`);
+        }
+
+        // Lakukan konversi
+        const point = [x, y, z];
+        const transformed = proj4(sourceProj, targetProj, point);
+
+        // Kembalikan dalam format yang diinginkan
+        return {
+            x: transformed[0],
+            y: transformed[1],
+            z: transformed[2] || 0 
+        };
     }
 
     document.getElementById('epsg-select').addEventListener('change', function () {
@@ -534,17 +540,19 @@ async function transformCoordinates(x, y, z, targetEPSG) {
 
                 try {
                     const transformed = await transformCoordinates(x, y, z, targetEPSG);
-                    xValue.textContent = transformed.x;
-                    yValue.textContent = transformed.y;
-                    zValue.textContent = transformed.z || '-';
+                    
+                    // Tampilkan ke UI dengan presisi desimal supaya lebih rapi
+                    xValue.textContent = transformed.x.toFixed(6);
+                    yValue.textContent = transformed.y.toFixed(6);
+                    zValue.textContent = transformed.z ? transformed.z.toFixed(6) : '-';
 
-                    // Masukkan nilai ke input offset
-                    offsetXInput.value = transformed.x;
-                    offsetYInput.value = transformed.y;
+                    offsetXInput.value = transformed.x.toFixed(6);
+                    offsetYInput.value = transformed.y.toFixed(6);
 
                     translationValues.style.display = 'block';
                 } catch (error) {
-                    alert('Gagal melakukan transformasi koordinat.');
+                    console.error("Error Transformasi:", error);
+                    alert('Gagal melakukan transformasi koordinat: ' + error.message);
                 }
             } else {
                 alert('Tag <translation> tidak ditemukan dalam file XML.');
@@ -573,25 +581,6 @@ async function transformCoordinates(x, y, z, targetEPSG) {
         }
 
         alert('Offset berhasil diterapkan!');
-    });
-    
-    
-    // document.addEventListener('contextmenu', function(e) {
-    // e.preventDefault();
-    // // alert('Klik kanan dinonaktifkan. Detail Code dapat hubungi peneliti via email.');
-    // });
-
-    document.addEventListener('keydown', function(e) {
-    // Blokir Ctrl+U
-    if (e.ctrlKey && e.key === 'u') {
-        e.preventDefault();
-        alert('Pintasan keyboard dinonaktifkan. Detail Code dapat hubungi peneliti via email.');
-    }
-    // Blokir Ctrl+Shift+I
-    if (e.ctrlKey && e.shiftKey && e.key === 'I') {
-        e.preventDefault();
-        alert('Pintasan keyboard dinonaktifkan. Detail Code dapat hubungi peneliti via email.');
-    }
     });
 
 </script>
